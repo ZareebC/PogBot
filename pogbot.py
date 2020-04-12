@@ -1,37 +1,91 @@
 import discord
 import random
+import youtube_dl
+import pymongo
+from pymongo import MongoClient
 from discord.ext import commands
-#from keepbot import keep_alive
-#print(discord.__version__)  # check to make sure at least once you're on the right version!
 
-token = open("token.txt", "r").read()  # I've opted to just save my token to a text file. 
+token = open("token.txt", "r").read() 
 
-client = discord.Client()  # starts the discord client.
+client = discord.Client()
 prefix = "*"
 bot = commands.Bot(command_prefix=prefix)
-@client.event  # event decorator/wrapper. More on decorators here: https://pythonprogramming.net/decorators-intermediate-python-tutorial/
-async def on_ready():  # method expected by client. This runs once when connected
-    print(f'We have logged in as {client.user}')  # notification of login.
+
+cluster = MongoClient("mongodb+srv://ZareebPogBot:mack@cluster0-qlm8l.mongodb.net/test?retryWrites=true&w=majority")
+
+db = cluster["test"]
+
+collection = db["test"]
+
 
 @client.event  
-async def on_command_error(ctx, error):
-    await ctx.send(error)
+async def on_ready(): 
+    print(f'We have logged in as {client.user}') 
+
 
 @client.event
-async def on_message(ctx):  # event that happens per any message.
+async def on_message(ctx): 
 
-    # each message has a bunch of attributes. Here are a few.
-    # check out more by print(dir(message)) for example.
     print(f"{ctx.channel}: {ctx.author}: {ctx.author.name}: {ctx.content}")
-    if str(ctx.content.lower()) == "pog":
-        if str(ctx.author.id) == "447751905364541442":
-            await ctx.channel.send('minimal pog levels')
+
+    if str(ctx.content.lower()) == "happens":
+        await ctx.channel.send('happens.')
+        search = collection.find({"_id": ctx.author.id})
+        #if str(search["_id"]) != str(ctx.author.id):
+        post = {"_id": ctx.author.id, "score": 1}
+        collection.insert_one(post)
+
+    elif str(ctx.content.lower()) == "pog":
+        #post1 = {"_id": 3, "name": "tjm", "score": 00}
+        #collection.insert_one(post1)
+        if str(ctx.author.id) == "587456398926020622":
+            await ctx.channel.send('minimal pog levels احترس')
         else:
             await ctx.channel.send('champ')
-    if str(ctx.content.lower()) == "*pogmeter":
-        count = random.randint(1,101)
-        await ctx.channel.send("Pog level: " + str(count))
+            post = {"_id": ctx.author.id, "score": 1}
+            collection.insert_one(post)
+            
+    elif str(ctx.content.lower()) == "mango":
+        await ctx.channel.send('https://flipgrid.com/s/00784e451eb0')
+
+    elif str(ctx.content.lower()) == "trapmango":
+        await ctx.channel.send('https://www.youtube.com/watch?v=XupBOtI2kgY&feature=youtu.be')
+
+    elif str(ctx.content.lower()) == "*pogmeter":
+        if str(ctx.author.id) == "95694371793408000":
+            count = random.randint(-50,20)
+            await ctx.channel.send("Pog level: " + str(count))
+
+        elif str(ctx.author.id) == "495354649742802955":
+            await ctx.channel.send('WARNING: too much pog')
+
+        elif str(ctx.author.id) == "587456398926020622":
+            await ctx.channel.send('-97 انه ما هو عليه')
+
+        else:
+            search = collection.find({"_id": ctx.author.id})
+            await ctx.channel.send("Pog level: " + str(search["score"]))
 
 
-#keep_alive()
-client.run(token)  # recall my token was saved!
+
+    @client.command(pass_context=True)
+    async def join(ctx):
+        if ctx.message.author.voice:
+            channel = ctx.message.author.voice.voice_channel
+            await channel.connect()
+
+    @client.command(pass_context = True)
+    async def leave(ctx):
+        server = ctx.message.server
+        voice_client = client.voice_client_in(server)
+        await voice_client.disconnect()
+
+
+    @client.command(pass_context = True)
+    async def play(ctx, url):
+        server = ctx.message.server
+        voice_client = client.voice_client_in(server)
+        player = await voice_client.create_ytdl_player(url)
+        players[server.id] = player
+        player.start()
+client.run(token)
