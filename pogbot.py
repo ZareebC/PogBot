@@ -5,7 +5,9 @@ import pymongo
 from pymongo import MongoClient
 from discord.ext import commands
 
-token = open("token.txt", "r").read() 
+from MinecraftServer import MinecraftServer
+
+token = open("token.txt", "r").read()
 
 client = discord.Client()
 prefix = "*"
@@ -17,14 +19,38 @@ db = cluster["test"]
 
 collection = db["test"]
 
+serverMC = MinecraftServer("sbhsmc.game-host.org")
 
-@client.event  
-async def on_ready(): 
-    print(f'We have logged in as {client.user}') 
+
+def format_response(response):
+    count = response[0]
+    players = response[1]
+
+    if count == 0:
+        reply = "0 players."
+    elif count == 1:
+        reply = "{} player:```\n{}\n```".format(str(count), "\n".join(players))
+    else:
+        reply = "{} players:```\n{}\n```".format(str(count), "\n".join(players))
+
+    return reply
 
 
 @client.event
-async def on_message(ctx): 
+async def on_ready():
+    print(f'We have logged in as {client.user}')
+
+
+@client.command()
+async def mc(ctx):
+    lookup = serverMC.server_lookup()
+    response = format_response(lookup)
+
+    await ctx.send(response)
+
+
+@client.event
+async def on_message(ctx):
 
     print(f"{ctx.channel}: {ctx.author}: {ctx.author.name}: {ctx.content}")
 
@@ -44,7 +70,7 @@ async def on_message(ctx):
             await ctx.channel.send('champ')
             post = {"_id": ctx.author.id, "score": 1}
             collection.insert_one(post)
-            
+
     elif str(ctx.content.lower()) == "mango":
         await ctx.channel.send('https://flipgrid.com/s/00784e451eb0')
 
