@@ -5,6 +5,7 @@ import pymongo
 from pymongo import MongoClient
 from discord.ext import commands
 
+
 token = open("token.txt", "r").read() 
 
 client = discord.Client()
@@ -16,6 +17,7 @@ cluster = MongoClient("mongodb+srv://ZareebPogBot:mack@cluster0-qlm8l.mongodb.ne
 db = cluster["test"]
 
 collection = db["test"]
+
 
 
 @client.event  
@@ -30,14 +32,18 @@ async def on_message(ctx):
 
     if str(ctx.content.lower()) == "happens":
         await ctx.channel.send('happens.')
-        search = collection.find({"_id": ctx.author.id})
-        #if str(search["_id"]) != str(ctx.author.id):
-        post = {"_id": ctx.author.id, "score": 1}
-        collection.insert_one(post)
+        searchCheck = collection.find_one({"_id": ctx.author.id})
+        if(searchCheck != ctx.author.id):
+            post = {"_id": ctx.author.id, "score": 1}
+            collection.insert_one(post)
+        else:   
+            search = collection.find({"_id": ctx.author.id})
+            for x in search:
+                score = x["score"]
+            score = score * 1.156
+            collection.update_one({"_id":ctx.author.id}, {"$set":{"score":score}})
 
-    elif str(ctx.content.lower()) == "pog":
-        #post1 = {"_id": 3, "name": "tjm", "score": 00}
-        #collection.insert_one(post1)
+    elif str(ctx.content.lower()) == "pog": 
         if str(ctx.author.id) == "587456398926020622":
             await ctx.channel.send('minimal pog levels احترس')
         else:
@@ -64,8 +70,9 @@ async def on_message(ctx):
 
         else:
             search = collection.find({"_id": ctx.author.id})
-            await ctx.channel.send("Pog level: " + str(search["score"]))
-
+            for x in search:
+                score = x["score"]
+            await ctx.channel.send("Pog level: " + str(score))
 
 
     @client.command(pass_context=True)
@@ -88,4 +95,5 @@ async def on_message(ctx):
         player = await voice_client.create_ytdl_player(url)
         players[server.id] = player
         player.start()
+        
 client.run(token)
